@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Form,
   Header,
@@ -7,71 +7,82 @@ import {
   Input,
   Segment,
 } from "semantic-ui-react";
+
 import axios from "axios";
 
-class App extends React.Component {
-  state = { name: "", todos: [] };
+const App = () => {
+  const [name, setName] = useState("");
+  const [todos, setTodos] = useState([]);
 
-  componentDidMount() {
-    axios.get("/api/todos").then(({ data: todos }) => this.setState({ todos }));
-  }
+  useEffect(() => {
+    getTodos();
+    //asdf
+  }, []);
 
-  handleSubmit = (e) => {
-    e.preventDefault();
-    const { name, todos } = this.state;
-    axios.post("/api/todos", { name }).then(({ data }) => {
-      this.setState({ todos: [data, ...todos], name: "" });
-    });
+  const getTodos = async () => {
+    try {
+      let res = await axios.get("/api/todos");
+      setTodos(res.data);
+    } catch (err) {
+      alert(err);
+    }
   };
 
-  updateTodo = (id) => {
-    axios.put(`/api/todos/${id}`).then(({ data }) => {
-      const todos = this.state.todos.map((todo) => {
-        if (todo.id === id) return data;
-        return todo;
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    axios
+      .post("/api/todos", { name: name })
+      .then((res) => {
+        setTodos([res.data, ...todos]);
+      })
+      .catch((err) => {
+        alert("error occured");
       });
 
-      this.setState({ todos });
-    });
+    setName("");
+  };
+  const updateTodo = async (id) => {
+    let res = await axios.put(`/api/todos/${id}`);
+    // so res.data is going updated todo
+    const updatedTodos = todos.map((t) => (t.id === id ? res.data : t));
+    setTodos(updatedTodos);
   };
 
-  render() {
-    const { name, todos } = this.state;
-    return (
-      <Container>
-        <Segment textAlign="center">
-          <Header as="h3" textAlign="center">
-            Todo List
-          </Header>
-          <Form onSubmit={this.handleSubmit}>
-            <Input
-              required
-              value={name}
-              onChange={(e) => this.setState({ name: e.target.value })}
-            />
-          </Form>
-          <List>
-            {todos.map((todo) => (
-              <List.Item
-                key={todo.id}
-                style={todo.complete ? styles.complete : {}}
-                onClick={() => this.updateTodo(todo.id)}
-              >
-                {todo.name}
-              </List.Item>
-            ))}
-          </List>
-        </Segment>
-      </Container>
-    );
-  }
-}
+  // lets say I  did delete...asdfas
+  //asdfasdfasdf
 
-const styles = {
-  complete: {
-    textDecoration: "line-through",
-    color: "grey",
-  },
+  return (
+    <Container>
+      <Segment textAlign="center">
+        <Header as="h3" textAlign="center">
+          Todo List
+        </Header>
+        <Form onSubmit={handleSubmit}>
+          <Input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Form>
+        <List>
+          {todos.map((t, i) => (
+            <List.Item
+              key={i}
+              onClick={() => updateTodo(t.id)}
+              style={{ color: t.complete ? "grey" : "black" }}
+            >
+              {t.name}
+            </List.Item>
+          ))}
+        </List>
+      </Segment>
+    </Container>
+  );
 };
 
 export default App;
+
+// make changes on your local machine (devolpment)
+// test on dev !!make sure things are working!!
+// push to a branch on git (for now directly pushing to master) !!make sure things are working!!
+// then we can do our production stuff
